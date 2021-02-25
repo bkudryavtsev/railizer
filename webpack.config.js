@@ -1,6 +1,7 @@
 const webpack = require('webpack');
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
@@ -8,7 +9,12 @@ const config = {
   entry: './src/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js'
+    filename: '[contenthash].bundle.js'
+  },
+  devServer: {
+    contentBase: path.join(__dirname, 'dist'),
+    compress: true,
+    port: 4000
   },
   module: {
     rules: [
@@ -55,8 +61,15 @@ const config = {
     ]
   },
   plugins: [
+    new HtmlWebpackPlugin({
+      template: 'src/index.html',
+      filename: 'index.html',
+      favicon: 'src/assets/favicon.ico'
+    }),
     new CopyPlugin({
-      patterns: [{ from: 'src/index.html' }],
+      patterns: [
+        { from: 'data', to: 'data' }
+      ]
     }),
     new LodashModuleReplacementPlugin,
     new CleanWebpackPlugin()
