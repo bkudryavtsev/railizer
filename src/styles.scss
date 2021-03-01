@@ -1,6 +1,25 @@
-$primary-color: white;
-$bg: black;
-h1 {
-  color: $primary-color;
-  background-color: $bg;
+body {
+  font-family: "Arial", sans-serif;
+}
+
+.bar {
+  fill: #aaa9ad;
+}
+
+.axis {
+  font-size: 13px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  display: none;
+}
+
+.label {
+  font-size: 13px;
+}
+
+.slider text {
+  font-size: 18px;
 }
