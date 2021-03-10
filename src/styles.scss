@@ -1,25 +1,21 @@
-body {
-  font-family: "Arial", sans-serif;
+#main-chart{
+	width: 1024px;
+	height: 600px;
+  overflow-y: auto;
 }
 
 .bar {
-  fill: #aaa9ad;
+	fill:#eaeaea;
 }
 
-.axis {
-  font-size: 13px;
+text.label {
+	fill: #777777;
+	color: #777777;
+	font-size: 20px;
+	font-weight: bold;
 }
 
-.axis path,
-.axis line {
-  fill: none;
-  display: none;
-}
-
-.label {
-  font-size: 13px;
-}
-
-.slider text {
-  font-size: 18px;
+text.location {
+	fill: #666666;
+	font-size: 14px;
 }
