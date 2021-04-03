@@ -57,7 +57,7 @@ const PRECISION = 2;
     .tickValues([...timeSet])
     .step(1)
     .width(700)
-    .fill('skyblue')
+    .fill('#777777')
     .on('onchange', throttle(val => {
       mainChart.update(formatData(val, 'INFRAINVEST'));
       mainChart.update(formatData(val, 'INFRAINVEST'));
