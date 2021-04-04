@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { nest } from 'd3-collection';
 import throttle from 'lodash/throttle';
 import { sliderBottom } from 'd3-simple-slider'
-import { MainChart } from './charts';
+import { MainChart, SecondaryChart } from './charts';
 
 import './styles.scss';
 
@@ -21,8 +21,21 @@ const PRECISION = 2;
     countryAlpha3Name[country['Alpha-3 code'].trim()] = country['Country'];
   });
 
-  const formatData = (yearRange, sortBy) => {
+  const formatData = (yearRange, sortBy, mean = true) => {
     const _data = data.filter(d => d['TIME'] >= yearRange[0] && d['TIME'] <= yearRange[1]);
+
+    if (!mean) {
+      return _data.map(entry => ({
+        'LOCATION': countryAlpha3Name[entry['LOCATION']],
+        'INFRAINVEST': +(entry['INFRAINVEST'] / entry['GDP'] * USD_EUR_RATE / 1000000 * 1000).toFixed(PRECISION),
+        'AIREMISSION': +(entry['AIREMISSION']).toFixed(PRECISION),
+        'PASSTRANSP': +(entry['PASSTRANSP']).toFixed(PRECISION),
+        'ROADACCID': +(entry['ROADACCID']).toFixed(PRECISION),
+        'TIME': +entry['TIME'],
+        'GDP': +(entry['GDP']).toFixed(PRECISION)
+      })).sort((a, b) => b[sortBy] - a[sortBy]);
+    }
+
     const nestedData = nest()
       .key(d => d['LOCATION'])
       .rollup(v => ({ 
@@ -49,6 +62,11 @@ const PRECISION = 2;
   mainChart.update(formatData(defaultDateRange, 'INFRAINVEST'));
   mainChart.update(formatData(defaultDateRange, 'INFRAINVEST'));
 
+  const secondaryChart = new SecondaryChart(512, 300);
+
+  const topFive = formatData(defaultDateRange, 'INFRAINVEST').slice(0, 5).map(d => d['LOCATION']);
+  secondaryChart.update(formatData(defaultDateRange, 'INFRAINVEST', false).filter(d => topFive.includes(d['LOCATION'])));
+
   const sliderTime = sliderBottom()
     .min(d3.min(timeSet))
     .max(d3.max(timeSet))
@@ -61,6 +79,9 @@ const PRECISION = 2;
     .on('onchange', throttle(val => {
       mainChart.update(formatData(val, 'INFRAINVEST'));
       mainChart.update(formatData(val, 'INFRAINVEST'));
+
+      const topFive = formatData(val, 'INFRAINVEST').slice(0, 5).map(d => d['LOCATION']);
+      secondaryChart.update(formatData(val, 'INFRAINVEST', false).filter(d => topFive.includes(d['LOCATION'])));
     }, 100));
 
   const gTime = d3

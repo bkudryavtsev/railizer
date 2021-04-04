@@ -69,6 +69,7 @@ body {
 #secondary-chart {
   width: 100%;
   min-width: 500px;
+  margin-top: 50px;
 }
 
 .bar-infrainvest, .bar-roadaccid {
@@ -95,4 +96,18 @@ text.legend-h1 {
 text.legend-h2 {
 	fill: #777777;
   font-size: 9px;
+}
+
+.x-axis, .y-axis {
+  line {
+    stroke: #777777;
+  }
+
+  path {
+    stroke: #777777;
+  }
+
+  text {
+    fill: #777777;
+  }
 }
