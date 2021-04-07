@@ -30,9 +30,16 @@ export class MainChart {
     this.legend.append('text')
       .attr('class', 'legend-h1')
       .attr('x', this.margin.left + this.center - 5)
-      .attr('y', 20)
+      .attr('y', 15)
       .attr('text-anchor', 'middle')
       .text('Country')
+
+    this.legend.append('text')
+      .attr('class', 'legend-h2')
+      .attr('x', this.margin.left + this.center - 5)
+      .attr('y', 28)
+      .attr('text-anchor', 'middle')
+      .text('(select up to 8)')
 
     this.legend.append('text')
       .attr('class', 'legend-h1')
@@ -68,7 +75,7 @@ export class MainChart {
       .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
   }
 
-  update(data) {
+  update(data, locationSelectCallback, locationMouseOver) {
     this.x1.domain([0, d3.max(data, d => d['ROADACCID'])]);
     this.x2.domain([0, d3.max(data, d => d['INFRAINVEST'])]);
     this.y.domain(data.map(d => d['LOCATION']));
@@ -113,13 +120,33 @@ export class MainChart {
       .attr('dx','0.5em')
       .attr('text-anchor', 'end')
       .text(d => d['ROADACCID']); 
-    
-    newRow.append('text')
+
+    const locationText = newRow.append('g')
       .attr('class','location')
+      .attr('opacity', 0)
+      .style('cursor', 'pointer')
+      .on('click', function (e, d) {
+        locationSelectCallback(d['LOCATION'], this);
+      })
+      .on('mouseover', function (e, d) {
+        locationMouseOver(this, d['LOCATION'], true);
+      })
+      .on('mouseout', function (e, d) {
+        locationMouseOver(this, d['LOCATION'], false);
+      });
+
+    locationText.append('rect')
+      .attr('width', this.centerTextWidth)
+      .attr('height', this.y.bandwidth())
+      .attr('x', this.center - this.centerTextWidth / 2)
+      .style('fill', 'none')
+      .style('stroke', 'white')
+      .style('stroke-width', '2px');
+    
+    locationText.append('text')
       .attr('text-anchor','middle')
       .attr('y', this.y.bandwidth() / 2)
       .attr('x', this.center)
-      .attr('opacity', 0)
       .attr('dy','0.35em')
       .text(d => d['LOCATION']);
 
@@ -165,26 +192,22 @@ export class MainChart {
       .delay((d, i) => 200 + i * 30)
       .duration(900)
       .attr('transform', d => `translate(0, ${this.y(d['LOCATION'])})`);
-
-    row.select('.bar1')
-      .attr('y', d => this.y(d['LOCATION']) + this.y.bandwidth() / 2);
   };
 }
 
 export class SecondaryChart {
-  constructor(width, height) {
-    this.margin = { top: 50, right: 50, bottom: 60, left: 100 };
+  constructor(width, height, locationColorMap) {
+    this.margin = { top: 50, right: 50, bottom: 100, left: 100 };
     this.width = width - this.margin.left - this.margin.right;
     this.height = height - this.margin.top - this.margin.bottom;
-    this.maxRadius = 10;
-    this.colors = ['red', 'orange', 'yellow', 'green', 'blue'];
+    this.maxRadius = 12;
+    this.locationColorMap = locationColorMap;
 
     d3.select('#secondary-chart').selectAll('svg').remove(); 
 
     this.x = d3.scaleLinear().range([0, this.width]);
-    this.y = d3.scaleLinear().range([0, this.height]);
-    this.r = d3.scaleLinear().range([0, this.maxRadius]);
-    this.color = d3.scaleOrdinal().range(this.colors);
+    this.y = d3.scaleLinear().range([this.margin.top, this.height]);
+    this.r = d3.scaleLinear().range([2, this.maxRadius]);
 
     this.svg = d3.select('#secondary-chart').append('svg')
       .attr('viewBox', [0, 0, width, height])
@@ -198,6 +221,13 @@ export class SecondaryChart {
     this.svg.append('g')
       .attr('class', 'y-axis')
       .attr('transform', `translate(-20, 0)`);
+
+    this.svg.append('text')
+      .attr('class', 'legend-h1')
+      .attr('y', 20)
+      .attr('x', this.width / 2)
+      .style('text-anchor', 'middle')
+      .text('Air emission and Rail Infrustructure Investments');
 
     this.svg.append('text')
       .attr('class', 'legend-h1')
@@ -227,7 +257,6 @@ export class SecondaryChart {
     this.x.domain([d3.min(data, d => d['TIME']), d3.max(data, d => d['TIME'])]);
     this.y.domain([d3.max(data, d => d['AIREMISSION']), d3.min(data, d => d['AIREMISSION'])]);
     this.r.domain([d3.min(data, d => d['INFRAINVEST']), d3.max(data, d => d['INFRAINVEST'])]);
-    this.color.domain([...new Set(data.map(d => d['LOCATION']))]);
 
     const xAxis = d3.axisBottom(this.x)
       .tickFormat(d3.format('d'))
@@ -250,13 +279,13 @@ export class SecondaryChart {
       .attr('cx', d => this.x(d['TIME']))
       .attr('cy', d => this.y(d['AIREMISSION']))
       .attr('r', d => this.r(d['INFRAINVEST']))
-      .style('fill', d => this.color(d['LOCATION']));
+      .style('fill', d => this.locationColorMap[d['LOCATION']]);
 
     bubbles.select('circle')
       .attr('cx', d => this.x(d['TIME']))
       .attr('cy', d => this.y(d['AIREMISSION']))
       .attr('r', d => this.r(d['INFRAINVEST']))
-      .style('fill', d => this.color(d['LOCATION']));
+      .style('fill', d => this.locationColorMap[d['LOCATION']]);
 
     bubbles.exit().remove();
   }

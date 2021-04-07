@@ -9,6 +9,18 @@ import './styles.scss';
 const USD_EUR_RATE = 0.83;
 const PRECISION = 2;
 
+const selectionColors = [
+  '#ff7675',
+  '#2ecc71',
+  '#2980b9',
+  '#9b59b6',
+  '#c0392b',
+  '#f39c12',
+  '#ff7675',
+  '#2c3e50'
+];
+const locationColorMap = {};
+
 (async () => {
   const data = await d3.csv('data/merged.csv', d3.autoType);
   const countryCodes = await d3.csv('data/countries_codes_and_coordinates.csv', d3.autoType);
@@ -56,32 +68,62 @@ const PRECISION = 2;
     })).sort((a, b) => b[sortBy] - a[sortBy]);
   };
 
-  const defaultDateRange = [2010, 2016];
+  let dateRange = [2010, 2016];
 
   const mainChart = new MainChart(512, 700);
-  mainChart.update(formatData(defaultDateRange, 'INFRAINVEST'));
-  mainChart.update(formatData(defaultDateRange, 'INFRAINVEST'));
+  const secondaryChart = new SecondaryChart(512, 400, locationColorMap);
 
-  const secondaryChart = new SecondaryChart(512, 300);
+  const onLocationSelect = (location, selectedObject) => {
+    if (locationColorMap[location]) {
+      delete locationColorMap[location];
+      d3.select(selectedObject).select('rect').style('stroke', 'none');
+    } else if (Object.values(locationColorMap).length < selectionColors.length) {
+      const color = selectionColors.find(c => !Object.values(locationColorMap).includes(c));
+      d3.select(selectedObject).select('rect').style('stroke', color);
+      locationColorMap[location] = color;
+    }
 
-  const topFive = formatData(defaultDateRange, 'INFRAINVEST').slice(0, 5).map(d => d['LOCATION']);
-  secondaryChart.update(formatData(defaultDateRange, 'INFRAINVEST', false).filter(d => topFive.includes(d['LOCATION'])));
+    const _data = formatData(dateRange, 'INFRAINVEST', false).filter(d => locationColorMap[d['LOCATION']]);
+    secondaryChart.update(_data);
+  };
+
+  const onLocationMouseOver = (obj, location, isMouseOver) => {
+    if (!locationColorMap[location]) {
+      if (isMouseOver) {
+        const color = selectionColors.find(c => !Object.values(locationColorMap).includes(c)); 
+        if (color) {
+          d3.select(obj).select('rect')
+            .transition()
+            .style('stroke', color);
+        }
+      } else {
+        d3.select(obj).select('rect')
+          .transition()
+          .delay(15)
+          .style('stroke', 'none');
+      }
+    }
+  }
+
+  mainChart.update(formatData(dateRange, 'INFRAINVEST'), onLocationSelect, onLocationMouseOver);
+  mainChart.update(formatData(dateRange, 'INFRAINVEST'), onLocationSelect, onLocationMouseOver);
 
   const sliderTime = sliderBottom()
     .min(d3.min(timeSet))
     .max(d3.max(timeSet))
-    .default(defaultDateRange)
+    .default(dateRange)
     .tickFormat(d3.format('d'))
     .tickValues([...timeSet])
     .step(1)
     .width(700)
     .fill('#777777')
     .on('onchange', throttle(val => {
-      mainChart.update(formatData(val, 'INFRAINVEST'));
-      mainChart.update(formatData(val, 'INFRAINVEST'));
-
-      const topFive = formatData(val, 'INFRAINVEST').slice(0, 5).map(d => d['LOCATION']);
-      secondaryChart.update(formatData(val, 'INFRAINVEST', false).filter(d => topFive.includes(d['LOCATION'])));
+      dateRange = val;
+      mainChart.update(formatData(dateRange, 'INFRAINVEST'), onLocationSelect, onLocationMouseOver);
+      mainChart.update(formatData(dateRange, 'INFRAINVEST'), onLocationSelect, onLocationMouseOver);
+      
+      const _data = formatData(dateRange, 'INFRAINVEST', false).filter(d => locationColorMap[d['LOCATION']]);
+      secondaryChart.update(_data);
     }, 100));
 
   const gTime = d3
