@@ -3,7 +3,10 @@
 
 ### Set up
 
-`
-% yarn 
+```
+# Install packages
+% yarn
+
+# Start dev server
 % yarn start
-`
+```
